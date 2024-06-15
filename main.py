@@ -1,5 +1,5 @@
 import requests
-import urllib.request
+import urllib
 import os
 import json
 from num2words import num2words
@@ -91,6 +91,10 @@ def gen_latex(event):
                 image_url = BASE_URL + speaker["image"]
                 image_ext = image_url.split(".")[-1].split("?")[0]
 
+                split = urllib.parse.urlsplit(image_url)
+                split = split._replace(path=urllib.parse.quote(split.path))
+                image_url = split.geturl()
+
                 urllib.request.urlretrieve(image_url, f"{dir}/Speaker{num2words(i+1).title()}.{image_ext}")
 
         # Event
@@ -98,6 +102,8 @@ def gen_latex(event):
         subtitle = escape_latex(event["subtitle"])
         summary = escape_latex(event["abstract"])
         classifiers = map(escape_latex, event["event_classifiers"].keys())
+        link = event["links"][0]["url"] if len(event["links"]) > 0 else ""
+        link_text = event["links"][0]["title"] if len(event["links"]) > 0 else ""
 
         tex.write(f"\\def\\TalkTitle{{{title}}}\n")
         tex.write(f"\\def\\TalkSubtitle{{{subtitle}}}\n")
@@ -105,14 +111,16 @@ def gen_latex(event):
 
         tex.write(f"\\def\\Tags{{{' - '.join(classifiers)}}}\n")
 
-        links = event["links"]
-        if len(links) > 0:
-            tex.write(f"\\def\\Link{{{links[0]['url']}}}\n")
-            tex.write(f"\\def\\LinkText{{{links[0]['title']}}}\n")
+        tex.write(f"\\def\\Link{{{link}}}\n")
+        tex.write(f"\\def\\LinkText{{{link_text}}}\n")
 
         if event["logo"]:
             logo_url = BASE_URL + event["logo"]
             logo_ext = logo_url.split(".")[-1].split("?")[0]
+
+            split = urllib.parse.urlsplit(logo_url)
+            split = split._replace(path=urllib.parse.quote(split.path))
+            logo_url = split.geturl()
 
             urllib.request.urlretrieve(logo_url, f"{dir}/Logo.{logo_ext}")
 
